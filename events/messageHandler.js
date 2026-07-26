@@ -26,6 +26,11 @@ import info from "../commands/menu.js"
 import { pingTest } from "../commands/ping.js"
 import auto from '../commands/auto.js'
 import uptime from '../commands/uptime.js'
+import instagram from '../commands/instagram.js'
+import facebook from '../commands/facebook.js'
+import twitter from '../commands/twitter.js'
+import ia from '../commands/ai.js'
+import { checkCooldown } from '../utils/cooldown.js'
 
 async function handleIncomingMessage(client, event) {
     let lid = client?.user?.lid.split(':')[0] + '@lid'
@@ -38,6 +43,7 @@ async function handleIncomingMessage(client, event) {
         const messageBody = (message.message?.extendedTextMessage?.text ||
                            message.message?.conversation || '').toLowerCase()
         const remoteJid = message.key.remoteJid
+        const senderId = message.key.participant || remoteJid
         const approvedUsers = configmanager.config.users[number].sudoList
 
         if (!messageBody || !remoteJid) continue
@@ -148,15 +154,21 @@ async function handleIncomingMessage(client, event) {
                     await sticker(client, message)
                     break
 
-                case 'play': // @cat: media
+                case 'play': { // @cat: media
+                    const cd = checkCooldown(senderId, 'play', 20)
+                    if (!cd.allowed) { await client.sendMessage(remoteJid, { text: `⏱️ Patiente encore ${cd.remaining}s avant de réutiliser .play` }); break }
                     await react(client, message)
                     await play(message, client)
                     break
+                }
 
-                case 'img': // @cat: media
+                case 'img': { // @cat: media
+                    const cd = checkCooldown(senderId, 'img', 15)
+                    if (!cd.allowed) { await client.sendMessage(remoteJid, { text: `⏱️ Patiente encore ${cd.remaining}s avant de réutiliser .img` }); break }
                     await react(client, message)
                     await img(message, client)
                     break
+                }
 
                 case 'vv': // @cat: media
                     await react(client, message)
@@ -168,15 +180,50 @@ async function handleIncomingMessage(client, event) {
                     await save(client, message)
                     break
 
-                case 'tiktok': // @cat: media
+                case 'tiktok': { // @cat: media
+                    const cd = checkCooldown(senderId, 'tiktok', 20)
+                    if (!cd.allowed) { await client.sendMessage(remoteJid, { text: `⏱️ Patiente encore ${cd.remaining}s avant de réutiliser .tiktok` }); break }
                     await react(client, message)
                     await tiktok(client, message)
                     break
+                }
 
                 case 'url': // @cat: media
                     await react(client, message)
                     await url(client, message)
                     break
+
+                case 'ig': { // @cat: media
+                    const cd = checkCooldown(senderId, 'ig', 20)
+                    if (!cd.allowed) { await client.sendMessage(remoteJid, { text: `⏱️ Patiente encore ${cd.remaining}s avant de réutiliser .ig` }); break }
+                    await react(client, message)
+                    await instagram(client, message)
+                    break
+                }
+
+                case 'fb': { // @cat: media
+                    const cd = checkCooldown(senderId, 'fb', 20)
+                    if (!cd.allowed) { await client.sendMessage(remoteJid, { text: `⏱️ Patiente encore ${cd.remaining}s avant de réutiliser .fb` }); break }
+                    await react(client, message)
+                    await facebook(client, message)
+                    break
+                }
+
+                case 'twitter': { // @cat: media
+                    const cd = checkCooldown(senderId, 'twitter', 20)
+                    if (!cd.allowed) { await client.sendMessage(remoteJid, { text: `⏱️ Patiente encore ${cd.remaining}s avant de réutiliser .twitter` }); break }
+                    await react(client, message)
+                    await twitter(client, message)
+                    break
+                }
+
+                case 'ia': { // @cat: ai
+                    const cd = checkCooldown(senderId, 'ia', 8)
+                    if (!cd.allowed) { await client.sendMessage(remoteJid, { text: `⏱️ Patiente encore ${cd.remaining}s avant de réutiliser .ia` }); break }
+                    await react(client, message)
+                    await ia(client, message)
+                    break
+                }
 
                 case 'tag': // @cat: group
                     await react(client, message)
@@ -314,4 +361,3 @@ case 'delprem': // @cat: premium
 }
 
 export default handleIncomingMessage
-
