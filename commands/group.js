@@ -1,7 +1,8 @@
 import configmanager from '../utils/configmanager.js'
+import { store, save } from '../utils/groupStore.js'
 
-const antilinkSettings = {}
-const warnStorage = {}
+const antilinkSettings = store.antilinkSettings
+const warnStorage = store.warnStorage
 
 export async function antilink(client, message) {
     const groupId = message.key.remoteJid
@@ -30,6 +31,7 @@ export async function antilink(client, message) {
         switch (action) {
             case 'on':
                 antilinkSettings[groupId] = { enabled: true, action: 'delete' }
+                save()
                 await client.sendMessage(groupId, { 
                     text: '✅ *Antilink activé*' 
                 })
@@ -37,6 +39,7 @@ export async function antilink(client, message) {
 
             case 'off':
                 delete antilinkSettings[groupId]
+                save()
                 await client.sendMessage(groupId, { 
                     text: '❌ *Antilink désactivé*' 
                 })
@@ -59,6 +62,7 @@ export async function antilink(client, message) {
                 } else {
                     antilinkSettings[groupId].action = setAction
                 }
+                save()
                 await client.sendMessage(groupId, { 
                     text: `✅ *Action:* ${setAction}` 
                 })
@@ -168,6 +172,7 @@ export async function linkDetection(client, message) {
         if (setting.action === 'warn') {
             const warnKey = `${groupId}_${senderId}`
             warnStorage[warnKey] = (warnStorage[warnKey] || 0) + 1
+            save()
             const warns = warnStorage[warnKey]
             
             await client.sendMessage(groupId, {
@@ -181,6 +186,7 @@ export async function linkDetection(client, message) {
                     text: `⚡ *Expulsé*\n@${senderId.split('@')[0]}\n3 warns atteints`
                 })
                 delete warnStorage[warnKey]
+                save()
             }
             
         } else if (setting.action === 'kick') {
@@ -224,6 +230,7 @@ export async function resetwarns(client, message) {
     const warnKey = `${groupId}_${target}`
     if (warnStorage[warnKey]) {
         delete warnStorage[warnKey]
+        save()
         await client.sendMessage(groupId, {
             text: `✅ Warns réinitialisés pour @${target.split('@')[0]}`
         })
@@ -456,7 +463,7 @@ export async function bye(client, message) {
 }
 
 // --- Réglages auto (promote / demote / left), déclenchés par les évènements du groupe ---
-const autoSettings = {}
+const autoSettings = store.autoSettings
 
 function getGroupAutoSetting(groupId, key) {
     return autoSettings[groupId]?.[key] || false
@@ -472,9 +479,11 @@ async function toggleAutoSetting(client, message, key, label, cmdName) {
 
     if (action === 'on') {
         autoSettings[groupId][key] = true
+        save()
         await client.sendMessage(groupId, { text: `✅ ${label} activé.` })
     } else if (action === 'off') {
         autoSettings[groupId][key] = false
+        save()
         await client.sendMessage(groupId, { text: `❌ ${label} désactivé.` })
     } else {
         await client.sendMessage(groupId, { text: `Usage: .${cmdName} on|off` })
@@ -544,4 +553,4 @@ export default {
     autoDemote,
     autoLeft,
     handleGroupUpdate
-}
+                    }
