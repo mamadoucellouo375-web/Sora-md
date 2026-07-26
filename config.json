@@ -1,0 +1,20 @@
+{
+  "users": {
+    "221711202436": {
+      "sudoList": [
+        "221711202436@s.whatsapp.net",
+        "221771202436@s.whatsapp.net"
+      ],
+      "tagAudioPath": "database/Sora.mp3",
+      "antilink": true,
+      "response": true,
+      "autoreact": false,
+      "prefix": ".",
+      "reaction": "♾️",
+      "welcome": true,
+      "record": true,
+      "type": true,
+      "publicMode": false
+    }
+  }
+}
