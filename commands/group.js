@@ -1,5 +1,6 @@
 import configmanager from '../utils/configmanager.js'
 import { store, save } from '../utils/groupStore.js'
+import { sendGroupEventMessage } from '../utils/groupMedia.js'
 
 const antilinkSettings = store.antilinkSettings
 const warnStorage = store.warnStorage
@@ -175,15 +176,16 @@ export async function linkDetection(client, message) {
             save()
             const warns = warnStorage[warnKey]
             
-            await client.sendMessage(groupId, {
-                text: `🚫 *Lien ${platforms.join('/')}*\nWarn ${warns}/3\n@${senderId.split('@')[0]}`,
+            await sendGroupEventMessage(client, groupId, 'antilink.jpg', {
+                caption: `🚫 *Lien ${platforms.join('/')}*\nWarn ${warns}/3\n@${senderId.split('@')[0]}`,
                 mentions: [senderId]
             })
             
             if (warns >= 3) {
                 await client.groupParticipantsUpdate(groupId, [senderId], 'remove')
-                await client.sendMessage(groupId, {
-                    text: `⚡ *Expulsé*\n@${senderId.split('@')[0]}\n3 warns atteints`
+                await sendGroupEventMessage(client, groupId, 'antilink.jpg', {
+                    caption: `⚡ *Expulsé*\n@${senderId.split('@')[0]}\n3 warns atteints`,
+                    mentions: [senderId]
                 })
                 delete warnStorage[warnKey]
                 save()
@@ -191,14 +193,14 @@ export async function linkDetection(client, message) {
             
         } else if (setting.action === 'kick') {
             await client.groupParticipantsUpdate(groupId, [senderId], 'remove')
-            await client.sendMessage(groupId, {
-                text: `⚡ *Expulsé*\n@${senderId.split('@')[0]}\nRaison: Lien ${platforms.join('/')}`,
+            await sendGroupEventMessage(client, groupId, 'antilink.jpg', {
+                caption: `⚡ *Expulsé*\n@${senderId.split('@')[0]}\nRaison: Lien ${platforms.join('/')}`,
                 mentions: [senderId]
             })
             
         } else if (setting.action === 'delete') {
-            await client.sendMessage(groupId, {
-                text: `🚫 *Lien supprimé*\n@${senderId.split('@')[0]} - ${platforms.join('/')}`,
+            await sendGroupEventMessage(client, groupId, 'antilink.jpg', {
+                caption: `🚫 *Lien supprimé*\n@${senderId.split('@')[0]} - ${platforms.join('/')}`,
                 mentions: [senderId]
             })
         }
@@ -280,7 +282,10 @@ export async function kick(client, message) {
         }
         
         await client.groupParticipantsUpdate(groupId, [target], 'remove')
-        await client.sendMessage(groupId, { text: `🚫 @${target.split('@')[0]} exclu.` })
+        await sendGroupEventMessage(client, groupId, 'kick.jpg', {
+            caption: `🚫 @${target.split('@')[0]} exclu.`,
+            mentions: [target]
+        })
     } catch (error) {
         await client.sendMessage(groupId, { text: '❌ Erreur' })
     }
@@ -302,7 +307,7 @@ export async function kickall(client, message) {
             } catch {}
         }
         
-        await client.sendMessage(groupId, { text: '✅ Purge terminée.' })
+        await sendGroupEventMessage(client, groupId, 'kick.jpg', { caption: '✅ Purge terminée.' })
     } catch (error) {
         await client.sendMessage(groupId, { text: '❌ Erreur' })
     }
@@ -318,7 +323,7 @@ export async function kickall2(client, message) {
         
         await client.sendMessage(groupId, { text: '⚡ SORA MD - One Shot...' })
         await client.groupParticipantsUpdate(groupId, targets, 'remove')
-        await client.sendMessage(groupId, { text: '✅ Tous exclus.' })
+        await sendGroupEventMessage(client, groupId, 'kick.jpg', { caption: '✅ Tous exclus.' })
     } catch (error) {
         await client.sendMessage(groupId, { text: '❌ Erreur' })
     }
@@ -342,7 +347,10 @@ export async function promote(client, message) {
         }
         
         await client.groupParticipantsUpdate(groupId, [target], 'promote')
-        await client.sendMessage(groupId, { text: `👑 @${target.split('@')[0]} promu admin.` })
+        await sendGroupEventMessage(client, groupId, 'promote.jpg', {
+            caption: `👑 @${target.split('@')[0]} promu admin.`,
+            mentions: [target]
+        })
     } catch (error) {
         await client.sendMessage(groupId, { text: '❌ Erreur' })
     }
@@ -366,7 +374,10 @@ export async function demote(client, message) {
         }
         
         await client.groupParticipantsUpdate(groupId, [target], 'demote')
-        await client.sendMessage(groupId, { text: `📉 @${target.split('@')[0]} retiré admin.` })
+        await sendGroupEventMessage(client, groupId, 'demote.jpg', {
+            caption: `📉 @${target.split('@')[0]} retiré admin.`,
+            mentions: [target]
+        })
     } catch (error) {
         await client.sendMessage(groupId, { text: '❌ Erreur' })
     }
@@ -406,7 +417,7 @@ export async function pall(client, message) {
         for (const target of targets) {
             try { await client.groupParticipantsUpdate(groupId, [target], 'promote') } catch {}
         }
-        await client.sendMessage(groupId, { text: '✅ Tous les membres sont admins.' })
+        await sendGroupEventMessage(client, groupId, 'promote.jpg', { caption: '✅ Tous les membres sont admins.' })
     } catch (error) {
         await client.sendMessage(groupId, { text: '❌ Erreur' })
     }
@@ -423,7 +434,7 @@ export async function dall(client, message) {
         for (const target of targets) {
             try { await client.groupParticipantsUpdate(groupId, [target], 'demote') } catch {}
         }
-        await client.sendMessage(groupId, { text: '✅ Tous les admins ont été rétrogradés.' })
+        await sendGroupEventMessage(client, groupId, 'demote.jpg', { caption: '✅ Tous les admins ont été rétrogradés.' })
     } catch (error) {
         await client.sendMessage(groupId, { text: '❌ Erreur' })
     }
@@ -455,7 +466,7 @@ export async function bye(client, message) {
     const groupId = message.key.remoteJid
     if (!groupId.includes('@g.us')) return
     try {
-        await client.sendMessage(groupId, { text: '👋 Le bot quitte le groupe.' })
+        await sendGroupEventMessage(client, groupId, 'bye.jpg', { caption: '👋 Le bot quitte le groupe.' })
         await client.groupLeave(groupId)
     } catch (error) {
         await client.sendMessage(groupId, { text: '❌ Erreur' })
@@ -502,15 +513,36 @@ export async function autoLeft(client, message) {
     await toggleAutoSetting(client, message, 'autoLeft', "Auto-left (le bot quitte s'il est rétrogradé)", 'auto-left')
 }
 
+export async function welcome(client, message) {
+    await toggleAutoSetting(client, message, 'welcome', 'Message de bienvenue pour les nouveaux membres', 'welcomegroup')
+}
+
 // Appelé depuis Sora/crew.js sur l'évènement 'group-participants.update'
 export async function handleGroupUpdate(client, update) {
     try {
         const { id: groupId, participants, action } = update
         const botId = client.user.id.split(':')[0]
 
-        if (action === 'add' && getGroupAutoSetting(groupId, 'autoPromote')) {
-            for (const p of participants) {
-                try { await client.groupParticipantsUpdate(groupId, [p], 'promote') } catch {}
+        if (action === 'add') {
+            if (getGroupAutoSetting(groupId, 'welcome')) {
+                let groupName = ''
+                try {
+                    const metadata = await client.groupMetadata(groupId)
+                    groupName = metadata.subject
+                } catch {}
+
+                for (const p of participants) {
+                    await sendGroupEventMessage(client, groupId, 'welcome.jpg', {
+                        caption: `👋 *Bienvenue* @${p.split('@')[0]} !${groupName ? `\nDans *${groupName}*` : ''}\n\nSORA MD`,
+                        mentions: [p]
+                    })
+                }
+            }
+
+            if (getGroupAutoSetting(groupId, 'autoPromote')) {
+                for (const p of participants) {
+                    try { await client.groupParticipantsUpdate(groupId, [p], 'promote') } catch {}
+                }
             }
         }
 
@@ -552,5 +584,6 @@ export default {
     autoPromote,
     autoDemote,
     autoLeft,
+    welcome,
     handleGroupUpdate
-                    }
+                }
