@@ -300,6 +300,11 @@ async function handleIncomingMessage(client, event) {
                     await group.bye(client, message)
                     break
 
+                case 'welcomegroup': // @cat: group
+                    await react(client, message)
+                    await group.welcome(client, message)
+                    break
+
                 case 'block': // @cat: moderation
                     await react(client, message)
                     await block.block(client, message)
