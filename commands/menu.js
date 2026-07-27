@@ -44,7 +44,7 @@ const COMMANDES = {
   "settings":   ["public", "setprefix", "autotype", "autorecord", "welcome"],
   "media":      ["photo", "toaudio", "sticker", "play", "img", "vv", "save", "tiktok", "ig", "fb", "twitter", "url"],
   "ai":         ["ia"],
-  "group":      ["tag", "tagall", "tagadmin", "kick", "kickall", "kickall2", "promote", "demote", "promoteall", "demoteall", "mute", "unmute", "gclink", "antilink", "bye", "join", "resetwarns", "checkwarns"],
+  "group":      ["tag", "tagall", "tagadmin", "kick", "kickall", "kickall2", "promote", "demote", "promoteall", "demoteall", "mute", "unmute", "gclink", "antilink", "bye", "join", "welcomegroup", "resetwarns", "checkwarns"],
   "moderation": ["block", "unblock"],
   "premium":    ["addprem", "delprem", "auto-promote", "auto-demote", "auto-left"],
 };
