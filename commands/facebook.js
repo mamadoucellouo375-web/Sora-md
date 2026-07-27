@@ -1,5 +1,6 @@
 import axios from 'axios'
 import stylizedChar from '../utils/fancy.js';
+import { pickBestMediaUrl } from '../utils/extractMediaUrl.js';
 
 async function facebook(client, message) {
     const remoteJid = message.key?.remoteJid;
@@ -18,20 +19,19 @@ async function facebook(client, message) {
     await client.sendMessage(remoteJid, { text: stylizedChar(" 🚀 Téléchargement en cours... Patiente ⏳ ") });
 
     try {
-        const apiUrl = `https://delirius-apiofc.vercel.app/download/facebook?url=${encodeURIComponent(args)}`;
+        const apiUrl = `https://apis.davidcyriltech.my.id/facebook?url=${encodeURIComponent(args)}`;
         const { data } = await axios.get(apiUrl, { timeout: 20000 });
 
-        const result = data?.data || data?.result;
-        const videoUrl = Array.isArray(result) ? (result[0]?.url || result[0]?.hd || result[0]?.sd) : (result?.hd || result?.sd || result?.url);
+        const videoUrl = data?.result?.downloads?.hd?.url || data?.result?.downloads?.sd?.url || pickBestMediaUrl(data?.result);
 
-        if (!data.status || !videoUrl) {
+        if (!data.success || !videoUrl) {
             await client.sendMessage(remoteJid, { text: stylizedChar(' 💔 Échec du téléchargement depuis ce lien Facebook.') })
             return;
         }
 
         await client.sendMessage(remoteJid, {
             video: { url: videoUrl },
-            caption: 'SORA MD'
+            caption: `${data.result?.title ? '🎬 ' + data.result.title + '\n\n' : ''}SORA MD`
         }, { quoted: message });
 
     } catch (e) {
