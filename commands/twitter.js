@@ -1,5 +1,6 @@
 import axios from 'axios'
 import stylizedChar from '../utils/fancy.js';
+import { pickBestMediaUrl } from '../utils/extractMediaUrl.js';
 
 async function twitter(client, message) {
     const remoteJid = message.key?.remoteJid;
@@ -18,22 +19,21 @@ async function twitter(client, message) {
     await client.sendMessage(remoteJid, { text: stylizedChar(" 🚀 Téléchargement en cours... Patiente ⏳ ") });
 
     try {
-        const apiUrl = `https://delirius-apiofc.vercel.app/download/twitter?url=${encodeURIComponent(args)}`;
+        // ⚠️ Endpoint non confirmé en direct (pas de curl fourni pour Twitter) — basé sur le
+        // même schéma que .fb/.ig du même fournisseur. Si ça 404, renvoie-moi le curl exact
+        // depuis https://apis.davidcyriltech.my.id/docs (catégorie Downloader) pour corriger.
+        const apiUrl = `https://apis.davidcyriltech.my.id/twitter?url=${encodeURIComponent(args)}`;
         const { data } = await axios.get(apiUrl, { timeout: 20000 });
 
-        const result = data?.data || data?.result;
-        const media = Array.isArray(result?.media) ? result.media : (Array.isArray(result) ? result : null);
-        const videoUrl = media?.find(m => m.type === 'video' || m.hd || m.url)?.hd
-            || media?.find(m => m.url)?.url
-            || result?.url;
+        const mediaUrl = pickBestMediaUrl(data?.result ?? data);
 
-        if (!data.status || !videoUrl) {
+        if ((data.success === false || data.status === false) || !mediaUrl) {
             await client.sendMessage(remoteJid, { text: stylizedChar(' 💔 Échec du téléchargement depuis ce lien Twitter/X.') })
             return;
         }
 
         await client.sendMessage(remoteJid, {
-            video: { url: videoUrl },
+            video: { url: mediaUrl },
             caption: 'SORA MD'
         }, { quoted: message });
 
