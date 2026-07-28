@@ -2,6 +2,19 @@ import configmanager from '../utils/configmanager.js'
 import { store, save } from '../utils/groupStore.js'
 import { sendGroupEventMessage } from '../utils/groupMedia.js'
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+async function isBotAdmin(client, groupId) {
+    try {
+        const metadata = await client.groupMetadata(groupId)
+        const botId = client.user.id.split(':')[0]
+        const bot = metadata.participants.find(p => p.id.includes(botId))
+        return { metadata, isAdmin: !!bot?.admin }
+    } catch (error) {
+        return { metadata: null, isAdmin: false }
+    }
+}
+
 const antilinkSettings = store.antilinkSettings
 const warnStorage = store.warnStorage
 
@@ -269,6 +282,9 @@ export async function kick(client, message) {
     if (!groupId.includes('@g.us')) return
     
     try {
+        const { isAdmin } = await isBotAdmin(client, groupId)
+        if (!isAdmin) return await client.sendMessage(groupId, { text: '❌ Je dois être *admin* du groupe pour faire ça.' })
+
         const text = message.message?.extendedTextMessage?.text || message.message?.conversation || ''
         const args = text.split(/\s+/).slice(1)
         let target
@@ -294,38 +310,67 @@ export async function kick(client, message) {
 export async function kickall(client, message) {
     const groupId = message.key.remoteJid
     if (!groupId.includes('@g.us')) return
-    
+
     try {
-        const metadata = await client.groupMetadata(groupId)
+        const { metadata, isAdmin } = await isBotAdmin(client, groupId)
+        if (!metadata) {
+            return await client.sendMessage(groupId, { text: '❌ Impossible de lire les infos du groupe.' })
+        }
+        if (!isAdmin) {
+            return await client.sendMessage(groupId, { text: '❌ Je dois être *admin* du groupe pour faire ça.' })
+        }
+
         const targets = metadata.participants.filter(p => !p.admin).map(p => p.id)
-        
-        await client.sendMessage(groupId, { text: '⚡ SORA MD - Purge...' })
-        
+        if (targets.length === 0) {
+            return await client.sendMessage(groupId, { text: 'ℹ️ Aucun membre non-admin à exclure.' })
+        }
+
+        await client.sendMessage(groupId, {
+            text: `⚡ SORA MD - Purge de ${targets.length} membre(s)...\n⏳ Ça va prendre du temps (WhatsApp limite les actions rapides pour éviter les bans).`
+        })
+
+        let success = 0, failed = 0
         for (const target of targets) {
             try {
                 await client.groupParticipantsUpdate(groupId, [target], 'remove')
-            } catch {}
+                success++
+            } catch (e) {
+                failed++
+            }
+            await sleep(1500) // délai anti-spam pour limiter le risque de ban WhatsApp
         }
-        
-        await sendGroupEventMessage(client, groupId, 'kick.jpg', { caption: '✅ Purge terminée.' })
+
+        await sendGroupEventMessage(client, groupId, 'kick.jpg', {
+            caption: `✅ Purge terminée.\n✔️ ${success} exclu(s)${failed ? `\n⚠️ ${failed} échec(s)` : ''}`
+        })
     } catch (error) {
-        await client.sendMessage(groupId, { text: '❌ Erreur' })
+        await client.sendMessage(groupId, { text: `❌ Erreur: ${error.message}` })
     }
 }
 
 export async function kickall2(client, message) {
     const groupId = message.key.remoteJid
     if (!groupId.includes('@g.us')) return
-    
+
     try {
-        const metadata = await client.groupMetadata(groupId)
+        const { metadata, isAdmin } = await isBotAdmin(client, groupId)
+        if (!metadata) {
+            return await client.sendMessage(groupId, { text: '❌ Impossible de lire les infos du groupe.' })
+        }
+        if (!isAdmin) {
+            return await client.sendMessage(groupId, { text: '❌ Je dois être *admin* du groupe pour faire ça.' })
+        }
+
         const targets = metadata.participants.filter(p => !p.admin).map(p => p.id)
-        
+        if (targets.length === 0) {
+            return await client.sendMessage(groupId, { text: 'ℹ️ Aucun membre non-admin à exclure.' })
+        }
+
         await client.sendMessage(groupId, { text: '⚡ SORA MD - One Shot...' })
         await client.groupParticipantsUpdate(groupId, targets, 'remove')
         await sendGroupEventMessage(client, groupId, 'kick.jpg', { caption: '✅ Tous exclus.' })
     } catch (error) {
-        await client.sendMessage(groupId, { text: '❌ Erreur' })
+        await client.sendMessage(groupId, { text: `❌ Erreur: ${error.message}\n⚠️ Note: virer beaucoup de monde d'un coup est souvent bloqué par WhatsApp (anti-abus). Essaie plutôt .kickall qui va plus doucement.` })
     }
 }
 
@@ -397,6 +442,50 @@ export async function gclink(client, message) {
     }
 }
 
+export async function groupinfo(client, message) {
+    const groupId = message.key.remoteJid
+    if (!groupId.includes('@g.us')) return await client.sendMessage(groupId, { text: '❌ Cette commande ne marche que dans un groupe.' })
+
+    try {
+        const metadata = await client.groupMetadata(groupId)
+        const admins = metadata.participants.filter(p => p.admin).length
+        const created = metadata.creation ? new Date(metadata.creation * 1000).toLocaleDateString('fr-FR') : 'Inconnue'
+
+        const text = `📋 *${metadata.subject}*\n\n` +
+            `👥 Membres: ${metadata.participants.length}\n` +
+            `👑 Admins: ${admins}\n` +
+            `📅 Créé le: ${created}\n` +
+            `${metadata.desc ? `📝 Description: ${metadata.desc}\n` : ''}` +
+            `🔒 Verrouillé: ${metadata.announce ? 'Oui (admins seulement)' : 'Non'}`
+
+        await client.sendMessage(groupId, { text })
+    } catch (error) {
+        await client.sendMessage(groupId, { text: `❌ Erreur: ${error.message}` })
+    }
+}
+
+export async function listadmins(client, message) {
+    const groupId = message.key.remoteJid
+    if (!groupId.includes('@g.us')) return await client.sendMessage(groupId, { text: '❌ Cette commande ne marche que dans un groupe.' })
+
+    try {
+        const metadata = await client.groupMetadata(groupId)
+        const admins = metadata.participants.filter(p => p.admin)
+
+        if (admins.length === 0) {
+            return await client.sendMessage(groupId, { text: 'ℹ️ Aucun admin trouvé.' })
+        }
+
+        const list = admins.map(a => `👑 @${a.id.split('@')[0]}${a.admin === 'superadmin' ? ' (créateur)' : ''}`).join('\n')
+        await client.sendMessage(groupId, {
+            text: `👑 *Admins du groupe*\n\n${list}`,
+            mentions: admins.map(a => a.id)
+        })
+    } catch (error) {
+        await client.sendMessage(groupId, { text: `❌ Erreur: ${error.message}` })
+    }
+}
+
 export async function join(client, message) {
     try {
         const text = message.message?.conversation || message.message?.extendedTextMessage?.text || ''
@@ -411,15 +500,25 @@ export async function pall(client, message) {
     const groupId = message.key.remoteJid
     if (!groupId.includes('@g.us')) return
     try {
-        const metadata = await client.groupMetadata(groupId)
+        const { metadata, isAdmin } = await isBotAdmin(client, groupId)
+        if (!metadata) return await client.sendMessage(groupId, { text: '❌ Impossible de lire les infos du groupe.' })
+        if (!isAdmin) return await client.sendMessage(groupId, { text: '❌ Je dois être *admin* du groupe pour faire ça.' })
+
         const targets = metadata.participants.filter(p => !p.admin).map(p => p.id)
-        await client.sendMessage(groupId, { text: '👑 Promotion de tous les membres...' })
+        if (targets.length === 0) return await client.sendMessage(groupId, { text: 'ℹ️ Tout le monde est déjà admin.' })
+
+        await client.sendMessage(groupId, { text: `👑 Promotion de ${targets.length} membre(s)... ⏳` })
+        let success = 0, failed = 0
         for (const target of targets) {
-            try { await client.groupParticipantsUpdate(groupId, [target], 'promote') } catch {}
+            try { await client.groupParticipantsUpdate(groupId, [target], 'promote'); success++ }
+            catch { failed++ }
+            await sleep(1500)
         }
-        await sendGroupEventMessage(client, groupId, 'promote.jpg', { caption: '✅ Tous les membres sont admins.' })
+        await sendGroupEventMessage(client, groupId, 'promote.jpg', {
+            caption: `✅ ${success} membre(s) promu(s)${failed ? `\n⚠️ ${failed} échec(s)` : ''}.`
+        })
     } catch (error) {
-        await client.sendMessage(groupId, { text: '❌ Erreur' })
+        await client.sendMessage(groupId, { text: `❌ Erreur: ${error.message}` })
     }
 }
 
@@ -427,16 +526,26 @@ export async function dall(client, message) {
     const groupId = message.key.remoteJid
     if (!groupId.includes('@g.us')) return
     try {
-        const metadata = await client.groupMetadata(groupId)
+        const { metadata, isAdmin } = await isBotAdmin(client, groupId)
+        if (!metadata) return await client.sendMessage(groupId, { text: '❌ Impossible de lire les infos du groupe.' })
+        if (!isAdmin) return await client.sendMessage(groupId, { text: '❌ Je dois être *admin* du groupe pour faire ça.' })
+
         const botId = client.user.id.split(':')[0]
         const targets = metadata.participants.filter(p => p.admin && !p.id.includes(botId)).map(p => p.id)
-        await client.sendMessage(groupId, { text: '📉 Rétrogradation de tous les admins...' })
+        if (targets.length === 0) return await client.sendMessage(groupId, { text: 'ℹ️ Aucun autre admin à rétrograder.' })
+
+        await client.sendMessage(groupId, { text: `📉 Rétrogradation de ${targets.length} admin(s)... ⏳` })
+        let success = 0, failed = 0
         for (const target of targets) {
-            try { await client.groupParticipantsUpdate(groupId, [target], 'demote') } catch {}
+            try { await client.groupParticipantsUpdate(groupId, [target], 'demote'); success++ }
+            catch { failed++ }
+            await sleep(1500)
         }
-        await sendGroupEventMessage(client, groupId, 'demote.jpg', { caption: '✅ Tous les admins ont été rétrogradés.' })
+        await sendGroupEventMessage(client, groupId, 'demote.jpg', {
+            caption: `✅ ${success} admin(s) rétrogradé(s)${failed ? `\n⚠️ ${failed} échec(s)` : ''}.`
+        })
     } catch (error) {
-        await client.sendMessage(groupId, { text: '❌ Erreur' })
+        await client.sendMessage(groupId, { text: `❌ Erreur: ${error.message}` })
     }
 }
 
@@ -571,6 +680,8 @@ export default {
     promote, 
     demote, 
     gclink, 
+    groupinfo,
+    listadmins,
     join,
     pall,
     dall,
@@ -586,4 +697,4 @@ export default {
     autoLeft,
     welcome,
     handleGroupUpdate
-                }
+                    }
