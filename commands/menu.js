@@ -3,7 +3,6 @@ import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import configs from "../utils/configmanager.js";
-import { getDevice } from "baileys";
 import stylizedChar from "../utils/fancy.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -42,11 +41,13 @@ const COMMANDES = {
   "utils":      ["uptime", "ping", "menu", "fancy", "setpp", "getpp"],
   "owner":      ["sudo", "delsudo"],
   "settings":   ["public", "setprefix", "autotype", "autorecord", "welcome"],
-  "media":      ["photo", "toaudio", "sticker", "play", "img", "vv", "save", "tiktok", "ig", "fb", "twitter", "url"],
+  "media":      ["photo", "toaudio", "sticker", "play", "img", "vv", "save", "tiktok", "ig", "fb", "twitter", "url", "blur", "grayscale", "invert", "resize"],
   "ai":         ["ia"],
-  "group":      ["tag", "tagall", "tagadmin", "kick", "kickall", "kickall2", "promote", "demote", "promoteall", "demoteall", "mute", "unmute", "gclink", "antilink", "bye", "join", "welcomegroup", "resetwarns", "checkwarns"],
+  "group":      ["tag", "tagall", "tagadmin", "kick", "kickall", "kickall2", "promote", "demote", "promoteall", "demoteall", "mute", "unmute", "gclink", "antilink", "bye", "join", "welcomegroup", "resetwarns", "checkwarns", "groupinfo", "listadmins"],
   "moderation": ["block", "unblock"],
   "premium":    ["addprem", "delprem", "auto-promote", "auto-demote", "auto-left"],
+  "tools":      ["calc", "base64", "hash", "binary", "morse", "reverse", "case", "count", "palindrome", "password", "time", "note"],
+  "fun":        ["dice", "coinflip", "rps", "8ball", "choose"],
 };
 
 export default async function info(client, message) {
@@ -114,29 +115,18 @@ export default async function info(client, message) {
     menu = menu.trim();
 
     // ── Envoi ────────────────────────────────────
+    // ⚠️ Important : on n'envoie JAMAIS le menu complet en légende d'image/vidéo.
+    // WhatsApp limite les légendes à environ 1024 caractères, alors que le menu
+    // dépasse largement cette taille avec toutes les commandes -> il serait tronqué.
     try {
-      const device = getDevice(message.key.id);
-      if (device === "android") {
-        await client.sendMessage(remoteJid, {
-          image: { url: "database/menu.jpg" },
-          caption: stylizedChar(menu),
-          contextInfo: {
-            participant: "0@s.whatsapp.net",
-            remoteJid: "status@broadcast",
-            quotedMessage: { conversation: "DARSOUL X NOVA" },
-            isForwarded: true,
-          },
-        });
-      } else {
-        await client.sendMessage(remoteJid,
-          { video: { url: "database/Sora.mp3" }, caption: stylizedChar(menu) },
-          { quoted: message }
-        );
-      }
-    } catch {
-      // Fallback texte
-      await client.sendMessage(remoteJid, { text: menu }, { quoted: message });
+        if (fs.existsSync('./database/menu.jpg')) {
+            await client.sendMessage(remoteJid, { image: { url: './database/menu.jpg' } });
+        }
+    } catch (imgErr) {
+        console.error('⚠️ Menu: image non envoyée:', imgErr.message);
     }
+
+    await client.sendMessage(remoteJid, { text: menu }, { quoted: message });
 
     console.log(`📋 Menu affiché — ${totalCmds} commandes`);
 
