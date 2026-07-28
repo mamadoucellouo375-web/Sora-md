@@ -31,6 +31,9 @@ import facebook from '../commands/facebook.js'
 import twitter from '../commands/twitter.js'
 import ia from '../commands/ai.js'
 import { checkCooldown } from '../utils/cooldown.js'
+import tools from '../commands/tools.js'
+import imagefx from '../commands/imagefx.js'
+import { note } from '../commands/notes.js'
 
 async function handleIncomingMessage(client, event) {
     let lid = client?.user?.lid.split(':')[0] + '@lid'
@@ -357,6 +360,132 @@ case 'delprem': // @cat: premium
                     } else {
                         await bug(message, client, "command only for premium users.", 3)
                     }
+                    break
+
+                // ----- Outils locaux (sans API tierce) -----
+                case 'calc': // @cat: tools
+                    await react(client, message)
+                    await tools.calc(client, message)
+                    break
+
+                case 'base64': // @cat: tools
+                    await react(client, message)
+                    await tools.base64(client, message)
+                    break
+
+                case 'hash': // @cat: tools
+                    await react(client, message)
+                    await tools.hash(client, message)
+                    break
+
+                case 'binary': // @cat: tools
+                    await react(client, message)
+                    await tools.binary(client, message)
+                    break
+
+                case 'morse': // @cat: tools
+                    await react(client, message)
+                    await tools.morse(client, message)
+                    break
+
+                case 'reverse': // @cat: tools
+                    await react(client, message)
+                    await tools.reverseText(client, message)
+                    break
+
+                case 'case': // @cat: tools
+                    await react(client, message)
+                    await tools.textCase(client, message)
+                    break
+
+                case 'count': // @cat: tools
+                    await react(client, message)
+                    await tools.countText(client, message)
+                    break
+
+                case 'palindrome': // @cat: tools
+                    await react(client, message)
+                    await tools.palindrome(client, message)
+                    break
+
+                case 'password': // @cat: tools
+                    await react(client, message)
+                    await tools.password(client, message)
+                    break
+
+                case 'dice': // @cat: fun
+                    await react(client, message)
+                    await tools.dice(client, message)
+                    break
+
+                case 'coinflip': // @cat: fun
+                    await react(client, message)
+                    await tools.coinflip(client, message)
+                    break
+
+                case 'rps': // @cat: fun
+                    await react(client, message)
+                    await tools.rps(client, message)
+                    break
+
+                case '8ball': // @cat: fun
+                    await react(client, message)
+                    await tools.eightball(client, message)
+                    break
+
+                case 'choose': // @cat: fun
+                    await react(client, message)
+                    await tools.choose(client, message)
+                    break
+
+                case 'time': // @cat: tools
+                    await react(client, message)
+                    await tools.currentTime(client, message)
+                    break
+
+                case 'groupinfo': // @cat: group
+                    await react(client, message)
+                    await group.groupinfo(client, message)
+                    break
+
+                case 'listadmins': // @cat: group
+                    await react(client, message)
+                    await group.listadmins(client, message)
+                    break
+
+                case 'resetwarns': // @cat: group
+                    await react(client, message)
+                    await group.resetwarns(client, message)
+                    break
+
+                case 'checkwarns': // @cat: group
+                    await react(client, message)
+                    await group.checkwarns(client, message)
+                    break
+
+                case 'blur': // @cat: media
+                    await react(client, message)
+                    await imagefx.blur(client, message)
+                    break
+
+                case 'grayscale': // @cat: media
+                    await react(client, message)
+                    await imagefx.grayscale(client, message)
+                    break
+
+                case 'invert': // @cat: media
+                    await react(client, message)
+                    await imagefx.invert(client, message)
+                    break
+
+                case 'resize': // @cat: media
+                    await react(client, message)
+                    await imagefx.resize(client, message)
+                    break
+
+                case 'note': // @cat: tools
+                    await react(client, message)
+                    await note(client, message)
                     break
             }
         }
