@@ -38,6 +38,8 @@ import { animeReact, REACTIONS } from '../commands/animereact.js'
 import economy from '../commands/economy.js'
 import { callad } from '../commands/callad.js'
 import { gainMessageExp } from '../utils/economyStore.js'
+import { setAfk, checkAfk } from '../commands/afk.js'
+import { hidetag } from '../commands/hidetag.js'
 
 async function handleIncomingMessage(client, event) {
     let lid = client?.user?.lid.split(':')[0] + '@lid'
@@ -61,6 +63,7 @@ async function handleIncomingMessage(client, event) {
         auto.autorecord(client, message)
         tag.respond(client, message)
         gainMessageExp(senderId)
+        checkAfk(client, message)
 
         reactions.auto(
             client,
@@ -544,11 +547,52 @@ case 'delprem': // @cat: premium
                     await react(client, message)
                     await animeReact(client, message, 'kick')
                     break
+
+                case 'afk': // @cat: utils
+                    await react(client, message)
+                    await setAfk(client, message)
+                    break
+
+                case 'hidetag': // @cat: group
+                    await react(client, message)
+                    await hidetag(client, message)
+                    break
+
+                case 'antivirtex': // @cat: group
+                    await react(client, message)
+                    await group.antivirtex(client, message)
+                    break
+
+                case 'antitagall': // @cat: group
+                    await react(client, message)
+                    await group.antitagall(client, message)
+                    break
+
+                case 'autosticker': // @cat: group
+                    await react(client, message)
+                    await group.autosticker(client, message)
+                    break
+
+                case 'filter': // @cat: group
+                    await react(client, message)
+                    await group.filter(client, message)
+                    break
+
+                case 'setwelcome': // @cat: group
+                    await react(client, message)
+                    await group.setwelcome(client, message)
+                    break
+
+                case 'setleft': // @cat: group
+                    await react(client, message)
+                    await group.setleft(client, message)
+                    break
             }
             }
         }
 
         await group.linkDetection(client, message)
+        await group.protectionDetection(client, message)
     }
 }
 
