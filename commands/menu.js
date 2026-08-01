@@ -39,17 +39,18 @@ function getCategoryIcon(category) {
 
 // Commandes intégrées directement (plus besoin de lire le fichier)
 const COMMANDES = {
-  "utils":      ["uptime", "ping", "menu", "fancy", "setpp", "getpp"],
+  "utils":      ["uptime", "ping", "menu", "fancy", "setpp", "getpp", "callad"],
   "owner":      ["sudo", "delsudo"],
   "settings":   ["public", "setprefix", "autotype", "autorecord", "welcome"],
   "media":      ["photo", "toaudio", "sticker", "play", "img", "vv", "save", "tiktok", "ig", "fb", "twitter", "url", "blur", "grayscale", "invert", "resize"],
   "ai":         ["ia"],
-  "group":      ["tag", "tagall", "tagadmin", "kick", "kickall", "kickall2", "promote", "demote", "promoteall", "demoteall", "mute", "unmute", "gclink", "antilink", "bye", "join", "welcomegroup", "resetwarns", "checkwarns", "groupinfo", "listadmins"],
+  "group":      ["tag", "tagall", "tagadmin", "kick", "kickall", "kickall2", "promote", "demote", "promoteall", "demoteall", "mute", "unmute", "gclink", "antilink", "bye", "join", "welcomegroup", "resetwarns", "checkwarns", "groupinfo", "listadmins", "warn", "unwarn"],
   "moderation": ["block", "unblock"],
   "premium":    ["addprem", "delprem", "auto-promote", "auto-demote", "auto-left"],
   "tools":      ["calc", "base64", "hash", "binary", "morse", "reverse", "case", "count", "palindrome", "password", "time", "note"],
   "fun":        ["dice", "coinflip", "rps", "8ball", "choose"],
-  "reactions":  ["hug", "pat", "kiss", "slap", "cry", "dance", "bonk", "cuddle", "poke", "wave", "wink", "highfive", "kick", "bite", "blush", "smile", "smug", "yeet", "lick", "nom", "bully", "cringe", "glomp", "handhold", "happy", "kill"],
+  "reactions":  ["hug", "pat", "kiss", "slap", "cry", "dance", "bonk", "cuddle", "poke", "wave", "wink", "highfive", "kickreact", "bite", "blush", "smile", "smug", "yeet", "lick", "nom", "bully", "cringe", "glomp", "handhold", "happy", "kill"],
+  "economy":    ["balance", "daily", "rank", "spy"],
 };
 
 export default async function info(client, message) {
@@ -136,3 +137,4 @@ export default async function info(client, message) {
     console.error("❌ Erreur menu:", err);
   }
 }
+
