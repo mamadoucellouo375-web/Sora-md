@@ -277,6 +277,80 @@ export async function checkwarns(client, message) {
     await client.sendMessage(groupId, { text: report })
 }
 
+export async function warn(client, message) {
+    const groupId = message.key.remoteJid
+    if (!groupId.includes('@g.us')) return
+
+    const text = message.message?.conversation || message.message?.extendedTextMessage?.text || ''
+    const args = text.split(/\s+/).slice(1)
+
+    let target
+    if (message.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+        target = message.message.extendedTextMessage.contextInfo.participant
+    } else if (args[0]) {
+        target = args[0].replace('@', '') + '@s.whatsapp.net'
+    } else {
+        return client.sendMessage(groupId, { text: '❌ Réponds à un message ou mentionne quelqu\'un.\nUsage: .warn @user [raison]' })
+    }
+
+    const raison = message.message?.extendedTextMessage?.contextInfo?.quotedMessage
+        ? args.join(' ')
+        : args.slice(1).join(' ')
+
+    const warnKey = `${groupId}_${target}`
+    warnStorage[warnKey] = (warnStorage[warnKey] || 0) + 1
+    save()
+    const count = warnStorage[warnKey]
+
+    await client.sendMessage(groupId, {
+        text: `⚠️ @${target.split('@')[0]} averti (${count}/3)${raison ? `\nRaison: ${raison}` : ''}`,
+        mentions: [target]
+    })
+
+    if (count >= 3) {
+        try {
+            const { isAdmin } = await isBotAdmin(client, groupId)
+            if (isAdmin) {
+                await client.groupParticipantsUpdate(groupId, [target], 'remove')
+                await client.sendMessage(groupId, { text: `⚡ @${target.split('@')[0]} exclu (3 warns atteints).`, mentions: [target] })
+            }
+        } catch {}
+        delete warnStorage[warnKey]
+        save()
+    }
+}
+
+export async function unwarn(client, message) {
+    const groupId = message.key.remoteJid
+    if (!groupId.includes('@g.us')) return
+
+    const text = message.message?.conversation || message.message?.extendedTextMessage?.text || ''
+    const args = text.split(/\s+/).slice(1)
+
+    let target
+    if (message.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+        target = message.message.extendedTextMessage.contextInfo.participant
+    } else if (args[0]) {
+        target = args[0].replace('@', '') + '@s.whatsapp.net'
+    } else {
+        return client.sendMessage(groupId, { text: '❌ Réponds à un message ou mentionne quelqu\'un.\nUsage: .unwarn @user' })
+    }
+
+    const warnKey = `${groupId}_${target}`
+    if (!warnStorage[warnKey]) {
+        return client.sendMessage(groupId, { text: `ℹ️ @${target.split('@')[0]} n'a aucun warn.`, mentions: [target] })
+    }
+
+    warnStorage[warnKey]--
+    if (warnStorage[warnKey] <= 0) delete warnStorage[warnKey]
+    save()
+
+    await client.sendMessage(groupId, {
+        text: `✅ Un warn retiré à @${target.split('@')[0]} (${warnStorage[warnKey] || 0}/3)`,
+        mentions: [target]
+    })
+}
+
 export async function kick(client, message) {
     const groupId = message.key.remoteJid
     if (!groupId.includes('@g.us')) return
@@ -692,9 +766,11 @@ export default {
     linkDetection,
     resetwarns,
     checkwarns,
+    warn,
+    unwarn,
     autoPromote,
     autoDemote,
     autoLeft,
     welcome,
     handleGroupUpdate
-                    }
+}
