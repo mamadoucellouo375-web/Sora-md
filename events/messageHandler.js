@@ -34,6 +34,7 @@ import { checkCooldown } from '../utils/cooldown.js'
 import tools from '../commands/tools.js'
 import imagefx from '../commands/imagefx.js'
 import { note } from '../commands/notes.js'
+import { animeReact, REACTIONS } from '../commands/animereact.js'
 
 async function handleIncomingMessage(client, event) {
     let lid = client?.user?.lid.split(':')[0] + '@lid'
@@ -74,6 +75,16 @@ async function handleIncomingMessage(client, event) {
             const parts = commandAndArgs.split(/\s+/)
             const command = parts[0]
 
+            // ----- Réactions anime (waifu.pics) - 26 commandes -----
+            if (REACTIONS.includes(command)) {
+                const cd = checkCooldown(senderId, 'animereact', 10)
+                if (!cd.allowed) {
+                    await client.sendMessage(remoteJid, { text: `⏱️ Patiente encore ${cd.remaining}s avant de réutiliser .${command}` })
+                } else {
+                    await react(client, message)
+                    await animeReact(client, message, command)
+                }
+            } else {
             switch (command) {
                 case 'uptime': // @cat: utils
                     await react(client, message)
@@ -487,6 +498,7 @@ case 'delprem': // @cat: premium
                     await react(client, message)
                     await note(client, message)
                     break
+            }
             }
         }
 
