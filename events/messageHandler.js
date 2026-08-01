@@ -35,6 +35,9 @@ import tools from '../commands/tools.js'
 import imagefx from '../commands/imagefx.js'
 import { note } from '../commands/notes.js'
 import { animeReact, REACTIONS } from '../commands/animereact.js'
+import economy from '../commands/economy.js'
+import { callad } from '../commands/callad.js'
+import { gainMessageExp } from '../utils/economyStore.js'
 
 async function handleIncomingMessage(client, event) {
     let lid = client?.user?.lid.split(':')[0] + '@lid'
@@ -57,6 +60,7 @@ async function handleIncomingMessage(client, event) {
         auto.autotype(client, message)
         auto.autorecord(client, message)
         tag.respond(client, message)
+        gainMessageExp(senderId)
 
         reactions.auto(
             client,
@@ -75,8 +79,10 @@ async function handleIncomingMessage(client, event) {
             const parts = commandAndArgs.split(/\s+/)
             const command = parts[0]
 
-            // ----- Réactions anime (waifu.pics) - 26 commandes -----
-            if (REACTIONS.includes(command)) {
+            // ----- Réactions anime (waifu.pics) - 25 commandes -----
+            // Note: "kick" existe dans waifu.pics mais est exclu ici car .kick est déjà
+            // la commande de modération (exclusion de groupe) — accessible via .kickreact
+            if (REACTIONS.includes(command) && command !== 'kick') {
                 const cd = checkCooldown(senderId, 'animereact', 10)
                 if (!cd.allowed) {
                     await client.sendMessage(remoteJid, { text: `⏱️ Patiente encore ${cd.remaining}s avant de réutiliser .${command}` })
@@ -497,6 +503,46 @@ case 'delprem': // @cat: premium
                 case 'note': // @cat: tools
                     await react(client, message)
                     await note(client, message)
+                    break
+
+                case 'balance': // @cat: economy
+                    await react(client, message)
+                    await economy.balance(client, message)
+                    break
+
+                case 'daily': // @cat: economy
+                    await react(client, message)
+                    await economy.daily(client, message)
+                    break
+
+                case 'rank': // @cat: economy
+                    await react(client, message)
+                    await economy.rank(client, message)
+                    break
+
+                case 'spy': // @cat: economy
+                    await react(client, message)
+                    await economy.spy(client, message)
+                    break
+
+                case 'callad': // @cat: utils
+                    await react(client, message)
+                    await callad(client, message)
+                    break
+
+                case 'warn': // @cat: group
+                    await react(client, message)
+                    await group.warn(client, message)
+                    break
+
+                case 'unwarn': // @cat: group
+                    await react(client, message)
+                    await group.unwarn(client, message)
+                    break
+
+                case 'kickreact': // @cat: reactions
+                    await react(client, message)
+                    await animeReact(client, message, 'kick')
                     break
             }
             }
