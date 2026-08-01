@@ -32,6 +32,7 @@ function getCategoryIcon(category) {
   if (c === "outils")     return "🛠️";
   if (c === "mémoire")    return "📝";
   if (c === "fun")        return "🎮";
+  if (c === "reactions")  return "🎭";
   if (c === "xp")         return "⚡";
   return "🎯";
 }
@@ -48,6 +49,7 @@ const COMMANDES = {
   "premium":    ["addprem", "delprem", "auto-promote", "auto-demote", "auto-left"],
   "tools":      ["calc", "base64", "hash", "binary", "morse", "reverse", "case", "count", "palindrome", "password", "time", "note"],
   "fun":        ["dice", "coinflip", "rps", "8ball", "choose"],
+  "reactions":  ["hug", "pat", "kiss", "slap", "cry", "dance", "bonk", "cuddle", "poke", "wave", "wink", "highfive", "kick", "bite", "blush", "smile", "smug", "yeet", "lick", "nom", "bully", "cringe", "glomp", "handhold", "happy", "kill"],
 };
 
 export default async function info(client, message) {
